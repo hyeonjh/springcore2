@@ -1,24 +1,18 @@
 package com.sparta.springcore;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-@RequiredArgsConstructor // final로 선언된 멤버 변수를 자동으로 생성합니다.
-@RestController // JSON으로 데이터를 주고받음을 선언합니다.
-public class AllInOneController {
+public class ProductRepository {
+    public void createProduct(Product product) throws SQLException {
 
-    // 신규 상품 등록
-    //클라이언트로 부터 상품정보를 전달받음
-    @PostMapping("/api/products")
-    public Product createProduct(@RequestBody ProductRequestDto requestDto) throws SQLException {
-// 요청받은 DTO 로 DB에 저장할 객체 만들기
-        Product product = new Product(requestDto);
-
+        //db역할을 받음
+        //여기부터 db역할
 // DB 연결
+        //getConnection의 exception 오류를 위로 보내줘 -> thorws SQLException -> Service에 createProduct(prodcut)로 이동
         Connection connection = DriverManager.getConnection("jdbc:h2:mem:springcoredb", "sa", "");
+
 
 // DB Query 작성 - DB언어로 ()부분 작성 /
 //        maxid - 마지막아이디 불러오기 -> 마지막 다음id에 상품을 저장해야하므로.
@@ -46,22 +40,12 @@ public class AllInOneController {
 // DB 연결 해제
         ps.close();
         connection.close();
-
-// 응답 보내기 - 클라이언트에게 응답보내기 .
-        return product;
     }
 
-    // 설정 가격 변경
-    @PutMapping("/api/products/{id}")
-    public Long updateProduct(@PathVariable Long id, @RequestBody ProductMypriceRequestDto requestDto) throws SQLException {
+    public Product getProduct(Long id) throws SQLException {
+
+//여기부터 repository에 넘김 - 서비스로부터 받음 - 여기부터 repository로 넘김 - 리포짓토리에서 받음 -------------
         Product product = new Product();
-
-//        최저가 0이상일 경우 - 에러발생.
-//        if(requestDto.getMyprice() <= 0){
-//            throw new RuntimeException("최저가를 0이상으로 입력해 주세요");
-//        }
-
-
 // DB 연결
         Connection connection = DriverManager.getConnection("jdbc:h2:mem:springcoredb", "sa", "");
 
@@ -79,40 +63,69 @@ public class AllInOneController {
             product.setLprice(rs.getInt("lprice"));
             product.setMyprice(rs.getInt("myprice"));
             product.setTitle(rs.getString("title"));
-        } else {
-            throw new NullPointerException("해당 아이디가 존재하지 않습니다.");
         }
+//        이부분을 repository가 아닌 서비스가 처리함.
+//        else {
+//            throw new NullPointerException("해당 아이디가 존재하지 않습니다.");
+//        }
+//        ------------------------------------------------------------------------------
 
+
+        // DB 연결 해제
+
+        ps.close();
+        connection.close();
+
+        //가져온product의 값을 넘겨줌.
+        return product;
+
+
+    }
+
+    public void updateMyprice(Long id, int myprice) throws SQLException {
+
+        //DB연결하는 부분을 위에서 복붙,
+        // DB 연결
+        // getConnnecttion에 exception을 throws함
+        Connection connection = DriverManager.getConnection("jdbc:h2:mem:springcoredb", "sa", "");
+
+
+        //여기부터 updateMyprice에 넘김 - 리포짓터리에서 받음.
 // DB Query 작성
-        ps = connection.prepareStatement("update product set myprice = ? where id = ?");
-        ps.setInt(1, requestDto.getMyprice());
-        ps.setLong(2, product.getId());
+        PreparedStatement ps = connection.prepareStatement("update product set myprice = ? where id = ?");
+
+//        ps.setInt(1, requestDto.getMyprice());
+//        ps.setLong(2, product.getId());
+        //
+        ps.setInt(1, myprice);
+        ps.setLong(2, id);
 
 // DB Query 실행
         ps.executeUpdate();
 
 // DB 연결 해제
-        rs.close();
         ps.close();
         connection.close();
+        //---------------------------------------------------------------
 
-// 응답 보내기 (업데이트된 상품 id)
-        return product.getId();
     }
 
-    // 등록된 전체 상품 목록 조회
-    @GetMapping("/api/products")
     public List<Product> getProducts() throws SQLException {
+
+        // 여기서부터 서비스로 넘김 - 컨트롤러로 부터 받음 - 리포짓터리로 넘김 -- 서비스에서 받음.
         List<Product> products = new ArrayList<>();
 
 // DB 연결
+        // exception처리
         Connection connection = DriverManager.getConnection("jdbc:h2:mem:springcoredb", "sa", "");
 
 // DB Query 작성 및 실행 - 모든내용을 가져와라.
         Statement stmt = connection.createStatement();
+        //전체를 가져올거임
         ResultSet rs = stmt.executeQuery("select * from product");
 
 // DB Query 결과를 상품 객체 리스트로 변환
+        // arraylist에 하나씩추가.
         while (rs.next()) {
             Product product = new Product();
             product.setId(rs.getLong("id"));
@@ -128,8 +141,8 @@ public class AllInOneController {
 // DB 연결 해제
         rs.close();
         connection.close();
-
-// 응답 보내기
+        //-------------------------------------------------------------------------------
+//    서비스에 products를 넘김.
         return products;
     }
 }
