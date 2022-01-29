@@ -1,15 +1,29 @@
-package com.sparta.springcore;
+package com.sparta.springcore.controller;
 
+import com.sparta.springcore.model.Product;
+import com.sparta.springcore.dto.ProductMypriceRequestDto;
+import com.sparta.springcore.dto.ProductRequestDto;
+import com.sparta.springcore.service.ProductService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import java.sql.*;
-import java.util.ArrayList;
 import java.util.List;
 
-@RequiredArgsConstructor // final로 선언된 멤버 변수를 자동으로 생성합니다.
+//@RequiredArgsConstructor // final로 선언된 멤버 변수를 자동으로 생성합니다.
 @RestController // JSON으로 데이터를 주고받음을 선언합니다.
 public class ProductController {
 
+        private final ProductService productService;
+
+        //객체 중복 생성문제 해결.
+    @Autowired
+        public ProductController(ProductService productService){
+//            ProductService productService = new ProductService(); - 느슨한결합해결하기 위해 괄호안에 넣어줌
+        //            //this를 사용하는 이유 : final의 service이름과 동일하기때문에 구분하기위해서.
+            this.productService = productService;
+
+        }
 
     // 신규 상품 등록
     //클라이언트로 부터 상품정보를 전달받음
@@ -17,9 +31,13 @@ public class ProductController {
     public Product createProduct(@RequestBody ProductRequestDto requestDto) throws SQLException {
 
         //서비스 만들어주기. - 서비스에 어떤 정보를 넘겨줘야하나 - 클라이언트로부터 받은 requestDto를 넘겨줘야함.
-        ProductService productService = new ProductService();
+//        ProductService productService = new ProductService();
         //컨트롤러입장에서 product정보를 넘겨줘야하므로  Product product 앞에 적어줌.
         Product product = productService.createProduct(requestDto); // 서비스에 인풋.
+
+//        ---------------------------신규상품 등록시 Client에게 응답하는 값 변경 ----------------------------
+//        - 등록된 product 전체정보 -> 등로된 product의 id
+//        controller의 역할 return값을 product.getId()로 두고, Product의 값을 Long으로 변경.
 
 // 이부분부터 서비스에 넘겨줌.
 //// 요청받은 DTO 로 DB에 저장할 객체 만들기
@@ -66,8 +84,9 @@ public class ProductController {
     public Long updateProduct(@PathVariable Long id, @RequestBody ProductMypriceRequestDto requestDto) throws SQLException {
 
 //        서비스 연결 -
-        ProductService productService = new ProductService();
+//        ProductService productService = new ProductService();
 //        productService.updateProduct(id, requestDto);
+//        아래 productService에 this 생략되어있음.
         Product product =productService.updateProduct(id, requestDto);
 
 ////        여기부터 Service로 넘김--------------------------------------------------------------------
@@ -120,7 +139,7 @@ public class ProductController {
     @GetMapping("/api/products")
     public List<Product> getProducts() throws SQLException {
        //list 정보를 클라이언트에게 보내줘야하므로 서비스에게 list정보를 받아야함.
-        ProductService productService = new ProductService();
+//        ProductService productService = new ProductService();
         //여기 products 값이 리턴됨 , getproducts클래스만들기
         List<Product> products= productService.getProducts();
 

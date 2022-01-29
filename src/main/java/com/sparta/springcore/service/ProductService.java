@@ -1,24 +1,53 @@
-package com.sparta.springcore;
+package com.sparta.springcore.service;
+
+import com.sparta.springcore.model.Product;
+import com.sparta.springcore.dto.ProductMypriceRequestDto;
+import com.sparta.springcore.dto.ProductRequestDto;
+import com.sparta.springcore.repository.ProductRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.sql.*;
-import java.util.ArrayList;
 import java.util.List;
 
+
+
+
+//스프링이 알아서 서비를 new해서 만들어서 스프링ioc컨테이너에 담아두고 빈으로 생성을해서 관리.
+//Component : 1. 객체생성 (Service service = new Service();
+//Component : 2. 스프링 IOC 컨테이너에 빈저장
+//스프링 빈 이름 규칙 : 클래스의 앞글자만 소문자로 변경!
+@Component
+@Service
 public class ProductService {
+
+    private final ProductRepository productRepository;
+
+    //생성자 만들기
+    //ProductRepository productRepository 괄호안에 넣고 느슨한결합만들기. (repository의 final값을 불러옴)
+    @Autowired
+    public ProductService(ProductRepository productRepository){
+//        ProductRepository productRepository = new ProductRepository();
+         //final과 중복되므로 this를 써줌.
+
+        this.productRepository = productRepository;
+    }
+
 
 
     public Product createProduct(ProductRequestDto requestDto) throws SQLException {
-
-
 //컨트롤러에서 서비스로 이동 --
         // 요청받은 DTO 로 DB에 저장할 객체 만들기 - 서비스의 역할.
         Product product = new Product(requestDto);
 
         //레파짓토리로 연결. - product를 넘겨줘야함 (title,image,link,lprice,myprice 정보를 넘겨줘야하므로)
-        ProductRepository productRepository = new ProductRepository();
+//        ProductRepository productRepository = new ProductRepository(); 중복
         //레파짓토리에 인풋 - 세이브를 할거기떄문에 리턴값 받을거 없음,
         //repositoru에서 exception 처리를 서비스에서 이어받아 Public쪽으로 위로넘김. throws SQLException
-        productRepository.createProduct(product);
+//        productRepository.createProduct(product);
+          productRepository.save(product);
+
 
         //서비스에서 컨트롤러로 product를 return으로 넘겨줌
         return product;
@@ -59,16 +88,34 @@ public class ProductService {
 
     public Product updateProduct(Long id, ProductMypriceRequestDto requestDto) throws SQLException {
 
-        ProductRepository productRepository = new ProductRepository();
+//        ProductRepository productRepository = new ProductRepository(); 중복
         //getProduct 를 리포짓토리에 생성.
         // getProduct의 exception을 throws함.
-        Product product = productRepository.getProduct(id);
-         if(product == null) {
-            throw new NullPointerException("해당 아이디가 존재하지 않습니다.");
-        }
+//        Product product = productRepository.getProduct(id);
+        Product product = productRepository.findById(id)
+        .orElseThrow(()-> new NullPointerException("해당아이디가 존재하지 않습니다. "));
 
 
+//         if(product == null) {
+//            throw new NullPointerException("해당 아이디가 존재하지 않습니다.");
+//        }
 
+         int myprice = requestDto.getMyprice();
+         product.setMyprice(myprice);
+//         productRepository.updateMyprice(id,myprice);
+         productRepository.save(product);
+
+        //updateMyprice 리포짓토리에 생성
+//        productRepository.updateMyprice(id,requestDto.getMyprice());
+
+        //리턴 정보 넘기기
+        return product;
+
+
+//        ---------------------------------- myprice의 값이 0이하값을 가질떄 오류 처리.-------------------------------
+//        if(requestDto.getMyprice() <= 0){
+//            throw new RuntimeException("희망 최저가는 0원 이상으로 설정해주세요 ");
+//        }
 
 
 ////        여기부터 Service로 넘김 - controller로 받음 - 여기부터 repository로 넘김 ----------------------
@@ -104,11 +151,7 @@ public class ProductService {
 ////            여기까지 리포짓터리로 넘김. ------------------------------------------------------------------
 
 
-        //updateMyprice 리포짓토리에 생성
-        productRepository.updateMyprice(id,requestDto.getMyprice());
 
-        //리턴 정보 넘기기
-        return product;
 
 //         //여기부터 updateMyprice에 넘김 -----------------------------------
 //// DB Query 작성
@@ -128,9 +171,10 @@ public class ProductService {
     }
 
     public List<Product> getProducts() throws SQLException {
-        ProductRepository productRepository = new ProductRepository();
+//        ProductRepository productRepository = new ProductRepository(); 중복
         //exception처리
-        List<Product> products = productRepository.getProducts();
+//        List<Product> products = productRepository.getProducts();
+        List<Product> products = productRepository.findAll();
 
         //컨트롤러에게 리턴.
         return products;
