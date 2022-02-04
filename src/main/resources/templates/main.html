@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:fragment="head(title)">
+<body>
+
+<div class="header" style="position:relative;">
+    <div id="header-title-login-user">
+        <span th:text="${username}"></span> 님의
+    </div>
+    <div id="header-title-select-shop">
+        Select Shop
+    </div>
+    <form id="my_form" method="post" action="/user/logout">
+        <a id="logout-text" href="javascript:{}" onclick="document.getElementById('my_form').submit();">로그아웃 / 로그인하기</a>
+    </form>
+    <button onclick="location.href='MyBoard.html'"> 나의글보기.</button>
+    <button onclick="location.href='write.html'">  글쓰기</button>
+    <button onclick="location.href='board.html'"> 전체글보기.</button>
+</div>
+
+</body>
+
+</html>

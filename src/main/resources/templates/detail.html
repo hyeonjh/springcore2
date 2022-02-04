@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timeline Service</title>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300&display=swap" rel="stylesheet">
+
+<script th:inline="javascript">
+    $(document).ready(function () {
+        // HTML 문서를 로드할 때마다 실행합니다.
+        getMessages();
+    })
+    // 메모를 생성합니다.
+    function writePost() {
+        // 1. 작성한 메모를 불러옵니다.
+        let content = $('#content').val();
+        // let boar= location.href.split("board/")[1];
+        let boardid = [[${memo.boardid}]];
+        // 4. 전달할 data JSON으로 만듭니다.
+        let data = { 'boardid':boardid, 'content': content};
+        console.log(data);
+        // 5. POST /api/memos 에 data를 전달합니다.
+        $.ajax({
+            type: "POST",
+            url: "/api/detail/",
+            contentType: "application/json",
+            data: JSON.stringify(data),
+            success: function (response) {
+                alert('댓글 작성 완료 ');
+                window.location.reload();
+            }
+        });
+    }
+
+    function getMessages() {
+        $('#cards-box').empty();
+
+        let board_id = [[${board_id}]];
+
+        $.ajax({
+            type: 'GET',
+            url: "/api/detail/",
+            success: function (response) {
+                for (let i = 0; i < response.length; i++) {
+                    let message = response[i];
+                    let conmentId = message['conmentId'];
+                    let content = message['content'];
+                    let modifiedAt = message['modifiedAt'];
+                    addHTML(conmentId,content,modifiedAt);
+                }
+            }
+        })
+    }
+
+    // 메모 하나를 HTML로 만들어서 body 태그 내 원하는 곳에 붙입니다.
+    function addHTML(conmentId,content, modifiedAt) {
+        // 1. HTML 태그를 만듭니다.
+        let tempHtml = `<div class="card">
+                                <div class="metadata">
+                                    <div class="date">
+                                        ${modifiedAt}
+                                    </div>
+                                    <div id="${conmentId}-conmentId" class="conmentId">
+                                        ${conmentId}
+                                    </div>
+                                    <div id="${conmentId}-content" class="content">
+                                        ${content}
+                                    </div>
+                                </div>
+                                <div class="footer">
+<!--                                <button id="${conmentId}-edit" onclick="editPost('${conmentId}')">수정 </button>-->
+                                <button id="${conmentId}-delete" onclick="deleteOne('${conmentId}')">삭제 </button>
+<!--                                <button id="${conmentId}-submit" onclick="submitEdit('${conmentId}')">수정적용 </button>-->
+                                </div>
+                            </div>`;
+        // 2. #cards-box 에 HTML을 붙인다.
+        $('#cards-box').append(tempHtml);
+    }
+
+    function deleteOne(conmentId) {
+        // 1. DELETE /api/memos/{id} 에 요청해서 메모를 삭제합니다.
+        $.ajax({
+            type: "DELETE",
+            url: `/api/detail/${conmentId}`,
+            success: function (response) {
+                alert('메시지 삭제에 성공하였습니다.');
+                window.location.reload();
+            }
+        })
+    }
+
+</script>
+
+</head>
+<body>
+
+<button onclick="window.location.href='/'">메인페이지로가기</button>
+
+<section class="section">
+    <form class="formClass" th:object="${memo}">
+        <p class="form-control" id="title" th:text="*{title}" readonly></p>
+        <p class="form-control" id="nickname" th:text="*{nickname}" readonly></p>
+        <p class="form-control" id="contents" th:text="*{contents}" readonly></p>
+    </form>
+</section>
+    <div class="card" >
+        <div class="area-write">
+    <textarea class="field" placeholder="댓글을 적으세요" name="content" id="content" cols="30"
+              rows="3"></textarea>
+            <button onclick="writePost()"> 댓글쓰기.</button>
+        </div>
+    </div>
+
+<div id="cards-box" class="area-read">
+    <div class="card">
+    </div>
+</div>
+
+
+
+</body>
+</html>
